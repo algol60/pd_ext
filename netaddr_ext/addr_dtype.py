@@ -2,17 +2,18 @@ import pandas as pd
 from pandas.api.extensions import ExtensionDtype
 import numpy as np
 
-from .lonlat import LonLat
+import netaddr
 
-# @pd.api.extensions.register_extension_dtype
-class GeoType(ExtensionDtype):
+@pd.api.extensions.register_extension_dtype
+class AddrType(ExtensionDtype):
     kind = 'O'
     na_value = None
-    name = 'lonlat'
-    # names = ['longitude', 'latitude']
-    type = LonLat
+    name = 'ipaddress'
+    names = None
+    type = netaddr.IPAddress
 
-    _record_type = np.dtype([('lon', 'f'), ('lat', 'f')])
+    # _record_type = np.dtype([('lon', 'f'), ('lat', 'f')])
+    _record_type = np.dtype([('ipaddress', 'O')])
 
     # def __init__(self, lonlat):
     #     self.data = LonLat(lon=lonlat[0], lat=lonlat[1])
@@ -31,16 +32,10 @@ class GeoType(ExtensionDtype):
 
     @classmethod
     def construct_from_string(cls, string):
-        print(f'@@ geo construct_from_string {cls}')
-        comma = string.find(',')
-        if comma==-1:
-            return None
+        print(f'@@ addr construct_from_string {cls} "{string}"')
 
-        lonlat = string.split(',')
-        if len(lonlat)!=2:
-            return None
-
-        return cls(float(lonlat[0]), float(lonlat[1]))
+        # return cls(float(lonlat[0]), float(lonlat[1]))
+        return netaddr.IPAddress(string)
 
     #
     # End: must implement.
@@ -53,4 +48,4 @@ class GeoType(ExtensionDtype):
     #     return False
 
     def __repr__(self):
-        return f"dtype('{GeoType.name}')"
+        return f"dtype('{AddrType.name}')"
