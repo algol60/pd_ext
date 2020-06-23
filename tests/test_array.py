@@ -34,9 +34,16 @@ def test_nbytes():
     points = [(1,2), (3,4), (5,6)]
     arr = GeoArray(points)
 
-    # The dat ais stored as a numpy structured array,
+    # The data is stored as a numpy structured array,
     # so it should be the same size as the equivalent numpy array.
-    # This is testing that GeoArray.nbytes returns the right number,
-    # rather than the actual number.
+    # This is testing that GeoArray.nbytes returns the right number.
     #
     assert arr.nbytes==np.array(points).nbytes
+
+def test_isna():
+    points = GeoArray([(np.nan, 2), (3, 4)])
+    assert (points.isna()==[True, False]).all()
+
+def test_isna2():
+    points = GeoArray([(1, 2), (3, 4), (5,np.nan)])
+    assert (points.isna()==[False, False, True]).all()

@@ -16,6 +16,7 @@ class GeoArray(ExtensionArray):
     def __init__(self, lonlats):
         """Accept a list of longitude,latitude pairs."""
 
+        lonlats = [tuple(row) for row in lonlats]
         self.data = np.array(lonlats, dtype=geo_dtype.GeoType._record_type)
         # print('@@', type(self.data), self.dtype, self.data.ndim, self.data)
         # print('@@SHAPE', type(self.data.shape), self.data.shape, self.data.shape[0])
@@ -91,8 +92,10 @@ class GeoArray(ExtensionArray):
 
         """
 
-        ret = self._codes == -1
-        return ret
+        lon_na = np.isnan(self.data['lon'])
+        lat_na = np.isnan(self.data['lat'])
+        na = lon_na | lat_na
+        return na
 
     def take(self, indexer, allow_fill: bool = False, fill_value=None):
         """

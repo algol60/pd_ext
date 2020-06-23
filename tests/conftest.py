@@ -6,12 +6,14 @@ import operator
 import pytest
 
 from pandas import Series
+import numpy as np
 
+from aa_geo import GeoArray, LonLat
 
 @pytest.fixture
 def dtype():
     """A fixture providing the ExtensionDtype to validate."""
-    raise NotImplementedError
+    return LonLat()
 
 
 @pytest.fixture
@@ -22,7 +24,8 @@ def data():
     * data[0] and data[1] should both be non missing
     * data[0] and data[1] should not be equal
     """
-    raise NotImplementedError
+    lonlats = [(i, i) for i in range(-50, 50)]
+    return GeoArray(lonlats)
 
 
 @pytest.fixture
@@ -34,12 +37,13 @@ def data_for_twos():
 @pytest.fixture
 def data_missing():
     """Length-2 array with [NA, Valid]"""
-    raise NotImplementedError
+    lonlats = GeoArray([(np.nan,np.nan), (3,4)])
+    return lonlats
 
 
 @pytest.fixture(params=["data", "data_missing"])
 def all_data(request, data, data_missing):
-    """Parametrized fixture giving 'data' and 'data_missing'"""
+    """Parameterized fixture giving 'data' and 'data_missing'"""
     if request.param == "data":
         return data
     elif request.param == "data_missing":

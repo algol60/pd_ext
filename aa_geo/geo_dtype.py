@@ -27,7 +27,7 @@ class GeoType(ExtensionDtype):
     # @property
     # def name(self) -> str:
     #     """A string representation of the dtype."""
-    #     return 'lonlat2'
+    #     return 'lonlat'
 
     @classmethod
     def construct_from_string(cls, string):
