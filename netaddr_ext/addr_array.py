@@ -1,6 +1,7 @@
 import pandas as pd
 from pandas.core.arrays import ExtensionArray
 from pandas._typing import ArrayLike, Dtype, Ordered, Scalar
+from pandas.core.algorithms import take
 
 import numpy as np
 import sys
@@ -31,7 +32,10 @@ class AddrArray(ExtensionArray):
         # print(f'@@ AA init {addrs}')
 
         self.data = np.array([_value(i) for i in addrs])
+        # print(f'@@ INIT shape {self.data.ndim} {self.data.shape}')
         # self.data = np.array(self.data])
+        if self.data.ndim!=1:
+            raise AttributeError('Only one dimension')
 
         # lonlats = [tuple(row) for row in lonlats]
         # self.data = np.array(lonlats, dtype=geo_dtype.GeoType._record_type)
@@ -117,9 +121,12 @@ class AddrArray(ExtensionArray):
 
         return na
 
-    def take(self, indexer, allow_fill: bool = False, fill_value=None):
-        """
-        Take elements from the array.
+    def take(self, indexer, allow_fill:bool=False, fill_value=None):
+        """Take elements from the array.
+
+        ExtensionArray.take is called by Series.__getitem__, .loc, iloc, when indices is a
+        sequence of values. Additionally, it's called by Series.reindex(), or any other method
+        that causes realignment, with a fill_value.
 
         Parameters
         ----------
@@ -193,22 +200,21 @@ class AddrArray(ExtensionArray):
 
         dtype = self.dtype
 
-        if isna(fill_value):
-            fill_value = -1
-        elif allow_fill:
-            # convert user-provided `fill_value` to codes
-            if fill_value in self.categories:
-                fill_value = self.categories.get_loc(fill_value)
-            else:
-                msg = (
-                    f"'fill_value' ('{fill_value}') is not in this "
-                    "Categorical's categories."
-                )
-                raise TypeError(msg)
+        if pd.isna(fill_value):
+            fill_value = NULL
+        # elif allow_fill:
+        #     # convert user-provided `fill_value` to codes
+        #     if fill_value in self.categories:
+        #         fill_value = self.categories.get_loc(fill_value)
+        #     else:
+        #         msg = (
+        #             f"'fill_value' ('{fill_value}') is not in this "
+        #             "Categorical's categories."
+        #         )
+        #         raise TypeError(msg)
 
-        codes = take(self._codes, indexer, allow_fill=allow_fill, fill_value=fill_value)
-        result = type(self).from_codes(codes, dtype=dtype)
-        return result
+        items = take(self.data, indexer, allow_fill=allow_fill, fill_value=fill_value)
+        return items
 
     def copy(self) -> "Categorical":
         """
