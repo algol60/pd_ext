@@ -6,36 +6,84 @@ from pandas.core.algorithms import take
 import numpy as np
 import sys
 
-from netaddr import IPAddress
-from . import AddrType
+from netaddr import IPNetwork as IPNetwork_
+from . import NetwType
 
-NULL_ADDR = IPAddress(0)
+class IPNetwork(IPNetwork_):
+    def __init__(self, addr, implicit_prefix=False, version=None, flags=0):
+        super().__init__(addr, implicit_prefix, version, flags)
+
+    __init__.__doc__ = IPNetwork_.__init__.__doc__
+
+    # def __iter__(self):
+    #     raise TypeError("'IPNetwork' object is not iterable")
+
+    def addresses(self):
+        return super().__iter__()
+
+    def __repr__(self):
+        # return f"Fake_repr-{self.__class__.__name__}('{super().__repr__()}')"
+        return super().__repr__()
+
+    def __str__(self):
+        # return f"Fake_str-{self.__class__.__name__}('{super().__str__()}')"
+        return super().__str__()
+    __len__ = None
+    __iter__ = None
+
+NULL_NET = IPNetwork('0.0.0.0')
 
 def _value(addr):
-    if isinstance(addr, IPAddress):
+    if isinstance(addr, IPNetwork):
         return addr
     elif addr is None or addr=='':
-        return NULL_ADDR
+        return NULL_NET
 
-    return IPAddress(addr)
+    return IPNetwork(addr)
 
-class AddrArray(ExtensionArray):
-    """netaddr.IPAddress ExtensionArray.
+class NetwArray(ExtensionArray):
+    """netaddr.IPNetwork ExtensionArray.
 
     See https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.api.extensions.ExtensionArray.html#pandas.api.extensions.ExtensionArray.
     """
 
-    dtype = AddrType()
+    dtype = NetwType()
+
+    def __repr__(self):
+        return '**plugh**'
 
     def __init__(self, addrs):
-        """Accept a list of IP addresses."""
+        """Accept a list of IP networks."""
         # print(f'@@ AA init {addrs}')
 
-        self.data = np.array([_value(i) for i in addrs])
+        # print('^^', addrs)
+        # print('%%1', [_value(i) for i in addrs])
+        # print('%%1a')
+        # zz = np.array([_value(i) for i in addrs], dtype=NetwType)
+        # print('%%1b')
+        # print('%%2', np.array([_value(i) for i in addrs]))
+
+        # IPNetwork instances are iterable.
+        # If we just feed them to np.array, they will be iterated over
+        # and the array will contain all of the addresses in the nework,
+        # which is definitely bad, especially for large networks.
+        # Therefore we have to muck around.
+        # Stackoverflow says '''arr.empty(); arr[:] = [values]''',
+        # but that hangs as well.
+        #
+        arr = np.empty([len(addrs)], dtype=object)
+        for i, addr in enumerate(addrs):
+            arr[i] = IPNetwork(addr)
+
+        self.data = arr
+        # self.data = np.array([_value(i) for i in addrs])
         # print(f'@@ INIT shape {self.data.ndim} {self.data.shape}')
         # self.data = np.array(self.data])
+        # print('&&', self.data)
         if self.data.ndim!=1:
             raise AttributeError('Only one dimension')
+
+        # print('ZZ')
 
         # lonlats = [tuple(row) for row in lonlats]
         # self.data = np.array(lonlats, dtype=geo_dtype.GeoType._record_type)
@@ -117,7 +165,7 @@ class AddrArray(ExtensionArray):
 
         """
 
-        na = self.data==NULL_ADDR
+        na = self.data==NULL_NET
 
         return na
 
@@ -201,7 +249,7 @@ class AddrArray(ExtensionArray):
         # dtype = self.dtype
 
         if pd.isna(fill_value):
-            fill_value = NULL_ADDR
+            fill_value = NULL_NET
         # elif allow_fill:
         #     # convert user-provided `fill_value` to codes
         #     if fill_value in self.categories:
@@ -237,30 +285,38 @@ class AddrArray(ExtensionArray):
     #     print(f'@@ astype {dtype}, {copy}')
     #     return np.array(None if i is None else netaddr.IPAddress(i) for i in scalars)
 
-    def __repr__(self) -> str:
-        """
-        String representation.
-        """
-        s = ' '.join('null' if i is NULL_ADDR else str(i) for i in self.data)
-        return f'AddrArray({s})'
+    # def __repr__(self) -> str:
+    #     """
+    #     String representation.
+    #     """
+    #     print('__repr__')
+    #     s = ' '.join('null' if i is NULL_NET else str(i) for i in self.data)
+    #     return f'NetwArray({s})'
 
-        # a = ', '.join(f'({lon},{lat})' for lon,lat in self.data)
-        # return f'GeoArray({a})])'
+    #     # a = ', '.join(f'({lon},{lat})' for lon,lat in self.data)
+    #     # return f'GeoArray({a})])'
 
-        # _maxlen = 10
-        # if len(self._codes) > _maxlen:
-        #     result = self._tidy_repr(_maxlen)
-        # elif len(self._codes) > 0:
-        #     result = self._get_repr(length=len(self) > _maxlen)
-        # else:
-        #     msg = self._get_repr(length=False, footer=True).replace("\n", ", ")
-        #     result = f"[], {msg}"
+    #     # _maxlen = 10
+    #     # if len(self._codes) > _maxlen:
+    #     #     result = self._tidy_repr(_maxlen)
+    #     # elif len(self._codes) > 0:
+    #     #     result = self._get_repr(length=len(self) > _maxlen)
+    #     # else:
+    #     #     msg = self._get_repr(length=False, footer=True).replace("\n", ", ")
+    #     #     result = f"[], {msg}"
 
-        # return result
+    #     # return result
 
-    def _formatter(self, boxed=False):
-        # Defer to CategoricalFormatter's formatter.
-        return None
+    # def __str__(self) -> str:
+    #     return 'xyzzy'
+
+    # def _formatter(self, boxed=False):
+    #     # Defer to CategoricalFormatter's formatter.
+    #     print('**\n** _formatter', boxed)
+    #     nets = '|'.join([str(net) for net in self.data])
+    #     # print('@@', nets)
+    #     # import pdb; pdb.set_trace()
+    #     return lambda v: repr(v)
 
     # ------------------------------------------------------------------------
     # Ops
@@ -268,7 +324,7 @@ class AddrArray(ExtensionArray):
 
     def __eq__(self, other):
         # TDOO: scalar ipaddress
-        if not isinstance(other, AddrArray):
+        if not isinstance(other, NetwArray):
             return NotImplemented
         mask = self.isna() | other.isna()
         result = self.data == other.data

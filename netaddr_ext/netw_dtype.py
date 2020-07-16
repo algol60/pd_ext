@@ -5,12 +5,12 @@ import numpy as np
 import netaddr
 
 @pd.api.extensions.register_extension_dtype
-class AddrType(ExtensionDtype):
+class NetwType(ExtensionDtype):
     kind = 'O'
     na_value = None
-    name = 'ipaddress'
+    name = 'ipnetwork'
     names = None
-    type = netaddr.IPAddress
+    type = netaddr.IPNetwork
 
     # _record_type = np.dtype([('lon', 'f'), ('lat', 'f')])
     _record_type = np.dtype([(name, 'O')])
@@ -32,10 +32,10 @@ class AddrType(ExtensionDtype):
 
     @classmethod
     def construct_from_string(cls, string):
-        print(f'@@ addr construct_from_string {cls} "{string}"')
+        print(f'@@ netw construct_from_string {cls} "{string}"')
 
         # return cls(float(lonlat[0]), float(lonlat[1]))
-        return netaddr.IPAddress(string)
+        return netaddr.IPNetwork(string)
 
     #
     # End: must implement.
@@ -48,4 +48,4 @@ class AddrType(ExtensionDtype):
     #     return False
 
     def __repr__(self):
-        return f"dtype('{AddrType.name}')"
+        return f"dtype('{NetwType.name}')"
